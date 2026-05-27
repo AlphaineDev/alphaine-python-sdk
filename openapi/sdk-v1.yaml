@@ -1,0 +1,203 @@
+openapi: 3.1.0
+info:
+  title: Alphaine SDK API
+  version: 1.0.0
+servers:
+  - url: https://alphaine.com
+security:
+  - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    RateLimitError:
+      type: object
+      required: [error, message, retryAfterSeconds]
+      properties:
+        error:
+          type: string
+          enum: [rate_limited]
+        message:
+          type: string
+        retryAfterSeconds:
+          type: integer
+    ApiToken:
+      type: object
+      required: [id, name, scope, tokenPrefix, expiresAt, revokedAt, createdAt, lastUsedAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        scope: { type: string, enum: ["data:read"] }
+        tokenPrefix: { type: string }
+        expiresAt: { type: [string, "null"], format: date-time }
+        revokedAt: { type: [string, "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+        lastUsedAt: { type: [string, "null"], format: date-time }
+    DataFolder:
+      type: object
+      required: [type, name, prefix, size, fileCount, summaryTruncated]
+      properties:
+        type: { const: folder }
+        name: { type: string }
+        prefix: { type: string }
+        size: { type: integer }
+        fileCount: { type: integer }
+        summaryTruncated: { type: boolean }
+    DataFile:
+      type: object
+      required: [type, key, objectRef, name, size, uploadedAt, etag]
+      properties:
+        type: { const: file }
+        key: { type: string }
+        objectRef: { type: string }
+        name: { type: string }
+        size: { type: integer }
+        uploadedAt: { type: [string, "null"], format: date-time }
+        etag: { type: [string, "null"] }
+    DataList:
+      type: object
+      required: [prefix, folders, files, truncated, cursor]
+      properties:
+        prefix: { type: string }
+        folders:
+          type: array
+          items: { $ref: "#/components/schemas/DataFolder" }
+        files:
+          type: array
+          items: { $ref: "#/components/schemas/DataFile" }
+        truncated: { type: boolean }
+        cursor: { type: [string, "null"] }
+    DownloadUrl:
+      type: object
+      required: [key, objectRef, url, expiresAt, size, etag, filename]
+      properties:
+        key: { type: string }
+        objectRef: { type: string }
+        url: { type: string, format: uri }
+        expiresAt: { type: string, format: date-time }
+        size: { type: integer }
+        etag: { type: [string, "null"] }
+        filename: { type: string }
+paths:
+  /api/sdk/v1/me:
+    get:
+      summary: Inspect the authenticated SDK token and account.
+      responses:
+        "200":
+          description: SDK token status.
+        "401":
+          description: Missing, revoked, or expired token.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429":
+          description: SDK usage limit exceeded.
+          headers:
+            Retry-After:
+              schema: { type: integer }
+            X-RateLimit-Limit:
+              schema: { type: integer }
+            X-RateLimit-Remaining:
+              schema: { type: integer }
+            X-RateLimit-Reset:
+              schema: { type: integer }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RateLimitError" }
+  /api/sdk/v1/data/list:
+    get:
+      summary: List Alphaine data folders and files.
+      parameters:
+        - name: prefix
+          in: query
+          schema: { type: string }
+        - name: cursor
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Data listing.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataList" }
+        "403":
+          description: Pro access required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429":
+          description: SDK usage limit exceeded.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RateLimitError" }
+  /api/sdk/v1/data/download-url:
+    post:
+      summary: Create a short-lived direct download URL for one object.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: []
+              properties:
+                objectRef:
+                  type: string
+                  description: Opaque object reference returned by list. Preferred.
+                key: { type: string }
+      responses:
+        "200":
+          description: Short-lived R2 presigned URL.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DownloadUrl" }
+        "429":
+          description: SDK usage limit exceeded.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RateLimitError" }
+  /api/sdk/v1/data/download-batch:
+    post:
+      summary: Create short-lived direct download URLs for up to 100 objects.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: []
+              properties:
+                objectRefs:
+                  type: array
+                  maxItems: 20
+                  items: { type: string }
+                  description: Opaque object references returned by list. Preferred.
+                keys:
+                  type: array
+                  maxItems: 20
+                  items: { type: string }
+      responses:
+        "200":
+          description: Short-lived R2 presigned URLs.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [links]
+                properties:
+                  links:
+                    type: array
+                    items: { $ref: "#/components/schemas/DownloadUrl" }
+        "429":
+          description: SDK usage limit exceeded.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RateLimitError" }
