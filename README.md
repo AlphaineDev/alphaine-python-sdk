@@ -27,9 +27,16 @@ release. Pin the version or Git commit in production workflows.
 
 The SDK is currently distributed from GitHub. It is not published to PyPI yet.
 
-Install it into a project directly from GitHub:
+Install it into an existing `uv` project directly from GitHub:
 
 ```bash
+uv add "alphaine @ git+https://github.com/AlphaineDev/alphaine-python-sdk.git"
+```
+
+If you are testing in a new empty directory, initialize a project first:
+
+```bash
+uv init
 uv add "alphaine @ git+https://github.com/AlphaineDev/alphaine-python-sdk.git"
 ```
 
@@ -37,6 +44,12 @@ For private repository access over SSH:
 
 ```bash
 uv add "alphaine @ git+ssh://git@github.com/AlphaineDev/alphaine-python-sdk.git"
+```
+
+To install the CLI directly from GitHub without creating a project:
+
+```bash
+uv tool install "alphaine @ git+https://github.com/AlphaineDev/alphaine-python-sdk.git"
 ```
 
 For local development from this repository:
