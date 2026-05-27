@@ -52,6 +52,20 @@ To install the CLI directly from GitHub without creating a project:
 uv tool install "alphaine @ git+https://github.com/AlphaineDev/alphaine-python-sdk.git"
 ```
 
+If GitHub HTTPS installs fail with a Git error such as `Error in the HTTP2
+framing layer`, retry with SSH if you have GitHub SSH access configured:
+
+```bash
+uv add "alphaine @ git+ssh://git@github.com/AlphaineDev/alphaine-python-sdk.git"
+uv tool install "alphaine @ git+ssh://git@github.com/AlphaineDev/alphaine-python-sdk.git"
+```
+
+You can also force Git to use HTTP/1.1 for GitHub HTTPS connections and retry:
+
+```bash
+git config --global http.version HTTP/1.1
+```
+
 For local development from this repository:
 
 ```bash
