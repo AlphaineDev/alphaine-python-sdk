@@ -15,6 +15,14 @@ without clicking through the web app. The SDK keeps the public interface small:
 inspect your token, browse available data, preview download work, and download
 individual files, prefixes, streams, or date ranges.
 
+## Project Status
+
+Current version: `0.1.0`.
+
+This SDK is in early beta. The core download flow is usable, but command names,
+helper methods, and response shapes may still evolve before a stable `1.0.0`
+release. Pin the version or Git commit in production workflows.
+
 ## Install
 
 The SDK is currently distributed from GitHub. It is not published to PyPI yet.
